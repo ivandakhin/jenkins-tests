@@ -17,12 +17,23 @@ pipeline {
             }
         }
 
+        stage('Change Apache Port to 3000') {
+            steps {
+                script {
+                    sh '''
+                    echo "Changing Apache port to 3000..."
+                    sudo sed -i '' 's/^Listen 8080/Listen 3000/' /opt/homebrew/etc/httpd/httpd.conf
+                    '''
+                }
+            }
+        }
+
         stage('Start Apache Server') {
             steps {
                 script {
                     sh '''
                     echo "Starting Apache..."
-                    /opt/homebrew/bin/brew services start httpd
+                    sudo brew services restart httpd
                     '''
                 }
             }
@@ -33,7 +44,7 @@ pipeline {
                 script {
                     sh '''
                     echo "Checking Apache status..."
-                    /opt/homebrew/bin/brew services list | grep httpd
+                    brew services list | grep httpd
                     '''
                 }
             }
@@ -44,7 +55,7 @@ pipeline {
                 script {
                     sh '''
                     echo "Checking if Apache responds..."
-                    curl -I http://localhost:8080 || echo "Apache is not responding!"
+                    curl -I http://localhost:3000 || echo "Apache is not responding!"
                     '''
                 }
             }
