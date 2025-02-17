@@ -8,7 +8,7 @@ pipeline {
                     sh '''
                     if ! /opt/homebrew/bin/brew list | grep -q httpd; then
                         echo "Installing Apache..."
-                        /opt/homebrew/bin/brew install httpd
+                        brew install httpd
                     else
                         echo "Apache is already installed."
                     fi
@@ -17,23 +17,30 @@ pipeline {
             }
         }
 
-        stage('Change Apache Port to 3000') {
+        stage('Find Available Port') {
             steps {
                 script {
                     sh '''
-                    echo "Changing Apache port to 3000..."
-                    sudo sed -i '' 's/^Listen 8080/Listen 3000/' /opt/homebrew/etc/httpd/httpd.conf
+                    APACHE_PORT=8080
+                    if lsof -i :8080 | grep LISTEN; then
+                        echo "Port 8080 is in use. Switching Apache to port 3000."
+                        APACHE_PORT=3000
+                    fi
+                    echo "Using port $APACHE_PORT for Apache"
+
+                    # Меняем порт в конфиге Apache
+                    sudo sed -i '' "s/^Listen [0-9]*/Listen $APACHE_PORT/" /opt/homebrew/etc/httpd/httpd.conf
                     '''
                 }
             }
         }
 
-        stage('Start Apache Server') {
+        stage('Restart Apache') {
             steps {
                 script {
                     sh '''
-                    echo "Starting Apache..."
-                    sudo brew services restart httpd
+                    echo "Restarting Apache..."
+                    brew services restart httpd
                     '''
                 }
             }
@@ -54,8 +61,9 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "Checking if Apache responds..."
-                    curl -I http://localhost:3000 || echo "Apache is not responding!"
+                    APACHE_PORT=$(grep -oE '^Listen [0-9]+' /opt/homebrew/etc/httpd/httpd.conf | awk '{print $2}')
+                    echo "Checking if Apache responds on port $APACHE_PORT..."
+                    curl -I http://localhost:$APACHE_PORT || echo "Apache is not responding!"
                     '''
                 }
             }
