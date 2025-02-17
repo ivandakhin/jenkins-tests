@@ -2,15 +2,15 @@ pipeline {
     agent any
 
     stages {
-        stage('Install Apache') {
+        stage('Install Apache (httpd)') {
             steps {
                 script {
                     sh '''
-                    if ! brew list | grep -q httpd; then
-                        echo "Process ..."
-                        brew install httpd
+                    if ! /opt/homebrew/bin/brew list | grep -q httpd; then
+                        echo "Installing Apache..."
+                        /opt/homebrew/bin/brew install httpd
                     else
-                        echo "OK"
+                        echo "Apache is already installed."
                     fi
                     '''
                 }
@@ -21,7 +21,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    brew services start httpd
+                    echo "Starting Apache..."
+                    /opt/homebrew/bin/brew services start httpd
                     '''
                 }
             }
@@ -31,7 +32,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    brew services list | grep httpd
+                    echo "Checking Apache status..."
+                    /opt/homebrew/bin/brew services list | grep httpd
                     '''
                 }
             }
@@ -41,7 +43,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    curl -I http://localhost:8080 || echo "OK!"
+                    echo "Checking if Apache responds..."
+                    curl -I http://localhost:8080 || echo "Apache is not responding!"
                     '''
                 }
             }
